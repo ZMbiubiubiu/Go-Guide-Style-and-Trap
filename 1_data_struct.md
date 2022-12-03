@@ -1,3 +1,4 @@
+本节主要讨论`Go`的基础数据结构，比如`slice`、`map`、`string`等。
 
 * 一些约定
 
@@ -772,3 +773,9 @@ func (s store) handleLog(log string) error {
 整体上就是字符串转换为字符串
 
 骚，实在是骚！
+
+## 参考
+* `白明《Go语言精进之路》(📚)`
+* `[100 go mistakes](📚)`
+* [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
+* [Effective Go](https://go.dev/doc/effective_go)

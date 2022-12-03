@@ -1,3 +1,5 @@
+本节主要讨论`Go`的函数以及方法。
+
 
 * 一些约定
 
@@ -740,6 +742,213 @@ func main() {
 }
 ```
 
+# struct 
+
+## 🌵1、使用var声明零值的struct
+看起来会更简洁，大家觉得呢？
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+s := structA{}
+```
+
+</td><td>
+
+```go
+var s structA
+```
+
+</td></tr>
+</tbody></table>
+
+
+## 🌵2、绑定到struct方法的排列顺序
+* `struct`声明之后，如果有工厂函数，紧随着`struct`
+* 向外暴露的方法排在前面
+* 不向外暴露的方法排在最后面
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+func (s *something) Cost() {
+  return calcCost(s.weights)
+}
+
+type something struct{ ... }
+
+func calcCost(n []int) int {...}
+
+func (s *something) Stop() {...}
+
+func newSomething() *something {
+    return &something{}
+}
+```
+
+</td><td>
+
+```go
+type something struct{ ... }
+
+func newSomething() *something {
+    return &something{}
+}
+
+func (s *something) Cost() {
+  return calcCost(s.weights)
+}
+
+func (s *something) Stop() {...}
+
+func calcCost(n []int) int {...}
+```
+
+</td></tr>
+</tbody></table>
+
+## 🚩3、最好不要内嵌结构体
+### 内嵌结构体
+```go
+type StructB struct {
+    A // A is another struct
+}
+```
+内嵌结构体是`Go`提供一种介于继承和组合之间的折中方案。
+
+外层的结构体完全复制了里层的结构体的方法。
+
+**内嵌结构体最大的特点就是暴露了里层的方法，哪怕这些方法并不想被外面的调用者使用。**
+
+### 内嵌结构体的缺点
+* 初始化不方便
+```go
+type Inner struct {
+	in string
+}
+
+type Outer struct {
+	Inner
+}
+
+func main() {
+	o := Outer{}
+
+	fmt.Println(o.in) // 直接引用Inner的字段
+	o.in = "555"      // 直接设置Inner的字段
+
+	// 可以在初始化的时候赋值in字段吗？
+	_ := Outer{in: "666"} // Unknown field 'in' in struct literal 
+}
+```
+
+* 可能暴露出不想被外界调用的方法
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+type SMap struct {
+  sync.Mutex // 内嵌Mutex
+
+  data map[string]string
+}
+
+func NewSMap() *SMap {
+  return &SMap{
+    data: make(map[string]string),
+  }
+}
+
+func (m *SMap) Get(k string) string {
+  m.Lock()
+  defer m.Unlock()
+
+  return m.data[k]
+}
+```
+
+</td><td>
+
+```go
+type SMap struct {
+  mu sync.Mutex
+
+  data map[string]string
+}
+
+func NewSMap() *SMap {
+  return &SMap{
+    data: make(map[string]string),
+  }
+}
+
+func (m *SMap) Get(k string) string {
+  m.mu.Lock()
+  defer m.mu.Unlock()
+
+  return m.data[k]
+}
+```
+
+</td></tr>
+
+<tr><td>
+
+内嵌的`Mutex`的`Lock`、`Unlock`方法被暴露给调用者
+
+The `Mutex` field, and the `Lock` and `Unlock` methods are unintentionally part
+of the exported API of `SMap`.
+
+</td><td>
+
+The mutex and its methods are implementation details of `SMap` hidden from its
+callers.
+
+</td></tr>
+</tbody></table>
+
+
+* `json.Marshal`结果的不确定性
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
+	"time"
+)
+
+type Event struct {
+	Id int64 `json:"id"`
+	time.Time
+}
+
+func main() {
+	e := Event{
+		Id:   1,
+		Time: time.Now(),
+	}
+
+	b, err := json.Marshal(&e)
+	if err != nil {
+		spew.Dump(err)
+	}
+	fmt.Println(string(b)) 
+	
+	// "2022-09-17T19:11:35.07228+08:00"
+}
+```
+
+
 # method
 `Go`方法的本质：就是以`receiver`类型的实例作为第一个参数的**函数**。
 
@@ -1076,7 +1285,7 @@ func main() {
 
 
 
-# 参考
+## 参考
 * `白明《Go语言精进之路》(📚)`
 * `[100 go mistakes](📚)`
 * [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
