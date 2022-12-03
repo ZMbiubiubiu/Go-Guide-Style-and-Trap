@@ -42,6 +42,48 @@ func (m *Mutex) Unlock()
 todo
 [Beware of copying mutexes in Go](https://eli.thegreenplace.net/2018/beware-of-copying-mutexes-in-go/)
 
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+  "time"
+)
+
+type Container struct {
+  sync.Mutex                       // <-- Added a mutex
+  counters map[string]int
+}
+
+func (c Container) inc(name string) {
+  c.Lock()                         // <-- Added locking of the mutex
+  defer c.Unlock()
+  c.counters[name]++
+}
+
+func main() {
+  c := Container{counters: map[string]int{"a": 0, "b": 0}}
+
+  doIncrement := func(name string, n int) {
+    for i := 0; i < n; i++ {
+      c.inc(name)
+    }
+  }
+
+  go doIncrement("a", 100000)
+  go doIncrement("a", 100000)
+
+  // Wait a bit for the goroutines to finish
+  time.Sleep(300 * time.Millisecond)
+  fmt.Println(c.counters)
+}
+```
+
+直接调用上述程序是会报错的，但是只需要修改一个字符，就能完美运行。
+
+你知道如何做吗？
+
 # goroutine
 
 ## 关于 goroutine 应该知道的知识

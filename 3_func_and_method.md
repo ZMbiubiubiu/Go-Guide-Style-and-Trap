@@ -12,28 +12,28 @@
 - [function函数](#function函数)
   - [🌵函数定义的规范行为](#🌵函数定义的规范行为)
     - [若参数有 context.Context 类型，必做第一个参数](#若参数有context-context类型，必做第一个参数)
-    - [若返回 err，必将最后一个返回值](#若返回err，必将最后一个返回值)
+    - [若返回 error，必将最后一个返回值](#若返回error，必将最后一个返回值)
     - [同一类型的参数可以合并](#同一类型的参数可以合并)
     - [函数名中禁止出现 filter](#函数名中禁止出现filter)
   - [🚩具名返回值：谨慎使用](#🚩具名返回值：谨慎使用)
-    - [明确具名返回值本身不是函数签名的一部分](#明确具名返回值本身不是函数签名的一部分)
-    - [存在的目的：为了表达清晰](#存在的目的：为了表达清晰)
-    - [函数体返回值的风格要统一](#函数体返回值的风格要统一)
+    - [明确具名返回值不是函数签名的一部分](#明确具名返回值不是函数签名的一部分)
+    - [存在的目的，为了表达清晰](#存在的目的，为了表达清晰)
+    - [函数返回方式的风格要统一](#函数返回方式的风格要统一)
   - [🚩init 函数：能不用就不用](#🚩init函数：能不用就不用)
     - [init 函数的特点](#init函数的特点)
     - [init 函数的缺点](#init函数的缺点)
     - [init 万一使用，需要满足](#init万一使用，需要满足)
     - [使用 init 函数的成功案例](#使用init函数的成功案例)
-  - [🚩只在 main 函数中退出](#🚩只在main函数中退出)
-  - [🚩尽量不要使用 new](#🚩尽量不要使用new)
   - [🚩defer 函数：合理使用](#🚩defer函数：合理使用)
     - [defer 的定义](#defer的定义)
     - [为什么要有 defer](#为什么要有defer)
     - [defer 的特性](#defer的特性)
     - [如何记住 defer 的特性](#如何记住defer的特性)
     - [不要在循环中滥用 defer](#不要在循环中滥用defer)
-  - [🚩对函数进行显示类型转换](#🚩对函数进行显示类型转换)
-  - [🚩了解变长参数的妙用](#🚩了解变长参数的妙用)
+  - [🚩只在 main 函数中退出](#🚩只在main函数中退出)
+  - [🌵尽量不要使用 new](#🌵尽量不要使用new)
+  - [🌵灵活对函数进行类型转换](#🌵灵活对函数进行类型转换)
+  - [🌵了解变长参数的妙用](#🌵了解变长参数的妙用)
     - [基本特点-常见](#基本特点常见)
     - [基本使用](#基本使用)
     - [实参与形参不匹配的问题](#实参与形参不匹配的问题)
@@ -49,27 +49,28 @@
   - [🚩类型与其方法定义在同一个包](#🚩类型与其方法定义在同一个包)
   - [🚩可以绑定 method 的类型](#🚩可以绑定method的类型)
   - [🚩明晰 value vs pointer receiver](#🚩明晰value-vs-pointer-receiver)
-  - [🚩value receiver 是需要复制类型的](#🚩value-receiver是需要复制类型的)
-  - [🚩修改类型状态要用 pointer receiver](#🚩修改类型状态要用pointer-receiver)
+  - [🚩value receiver 调用方法，是需要复制类型的](#🚩value-receiver调用方法，是需要复制类型的)
+  - [🚩pointer receiver 调用方法可以修改状态值](#🚩pointer-receiver调用方法可以修改状态值)
   - [🌵method 的接受者类型最好统一](#🌵method的接受者类型最好统一)
-- [empty interface 空接口](#empty-interface空接口)
-  - [🚩尽量避免使用空接口作为函数的参数类型](#🚩尽量避免使用空接口作为函数的参数类型)
-- [interface 非空接口](#interface非空接口)
-  - [🌵name](#🌵name)
-  - [🌵显式验证：某个类型实现指定的接口](#🌵显式验证：某个类型实现指定的接口)
-  - [🚩内嵌 interface](#🚩内嵌interface)
-  - [🚩当心直接返回 interface 的情况](#🚩当心直接返回interface的情况)
-  - [🚩尽量定义小接口](#🚩尽量定义小接口)
   - [参考](#参考)
 
 
 # function函数
 `func`是`Go`中的一等公民。
 
-所谓一等公民，也就是`func`类型可以赋值给变量、可以作为函数的参数、可以作为函数的返回值、可以自定义类型，如`net/http`包中
+所谓一等公民，表现为`func`类型：
+
+* 可以赋值给变量
+* 可以作为函数的参数
+* 可以作为函数的返回值、
+* 可以自定义类型，如`net/http`包中
 ```go
 type HandlerFunc func(ResponseWriter, *Request)
 ```
+
+在下文中，会说明为何`http.HandlerFunc`这个`net/http`包自定义的函数类型是如何的强大。
+
+后面也会探讨在函数的定义和使用中容易出错的方式和场景，不过在此之前，让我们先对函数的使用做一些规范，以便达成共识。
 
 ## 🌵函数定义的规范行为
 ### 若参数有 context.Context 类型，必做第一个参数
@@ -77,7 +78,7 @@ type HandlerFunc func(ResponseWriter, *Request)
 func getContent(ctx content.Context, ...) error
 ```
 
-### 若返回 err，必将最后一个返回值
+### 若返回 error，必将最后一个返回值
 ```go
 func foo()(int, string, error)
 ```
@@ -105,9 +106,25 @@ func getCoordinate(lat, log float64) (string, error)
 可以用`match`、`qualify`等词替代
 
 ## 🚩具名返回值：谨慎使用
-### 明确具名返回值本身不是函数签名的一部分
+所谓具名返回值，顾名思义，就是给返回值命名一下，如
 
-如何证明？
+```go
+// 普通函数定义
+func add(a,b int) (int) {}
+
+// 使用具名返回值的函数定义
+func add(a,b int) (result int) {}
+```
+
+### 明确具名返回值不是函数签名的一部分
+
+如何证明？反证法。
+
+定义一个接口，接口中方法使用具名返回值的形式。
+
+然后我们自定义一个类型，实现这个方法，不过我们不采用具名返回值。
+
+看看自定义类型在编译器的检查下，是否实现了该接口。
 
 ```go
 type locator interface {
@@ -127,9 +144,11 @@ func main() {
 	fmt.Printf("compass is type of locator, %T", l)
 }
 ```
-证毕
+运行不会报错，说明自定义类型`Compass`实现了`locator`接口。
 
-### 存在的目的：为了表达清晰
+证毕：具名返回值不是函数签名的一部分。
+
+### 存在的目的，为了表达清晰
 ```go
 // bad 
 func getAddress(addr string) (float64, float64, error)
@@ -139,13 +158,9 @@ func getAddress(addr string) (float64, float64, error)
 func getAddress(addr string) (lat float64, log float64, err error) 
 ```
 
-### 函数体返回值的风格要统一
+### 函数返回方式的风格要统一
 
-* 如果函数体本身比较长，就不要省略`return`的参数
-
-> if you're going to omit returning params, do it explicitly
-
-因为具名返回值的函数，可以不写具体的返回值
+比如下面就是一个反面的示例
 
 ```go
 // 关于如何写出不可维护的代码，我”具名返回值函数“有话说
@@ -162,24 +177,26 @@ func getLocation(address string) (lat, lng float64, err error) {
 	}
 }
 ```
+另外，关于具名返回值，有一个编程建议
 
+* 如果函数本身比较长，就不要省略`return`的参数
 
 
 ## 🚩init 函数：能不用就不用
 首先看下`init`内置函数的特点
 ### init 函数的特点
 
-* `init`和`main`一样，均为`func()` 函数类型： 无参数、无返回值
+* `init`和`main`一样，均为`func()` 函数类型： 无参数、无返回值。
 
-* 在`Go`中初始化一个`package`的流程：首先初始化`package`中的常量、变量，然后就是`init`函数
+* 在`Go`中初始化一个`package`的流程：首先初始化`package`中的常量、变量，然后就是`init`函数。
 
-* 一个`package`中可以有多个`init`函数，甚至一个文件中都可以定义多个`init`函数。按照”先到先得“的顺序执行
+* 一个`package`中可以有多个`init`函数，甚至一个文件中都可以定义多个`init`函数，按照”先到先得“的顺序执行。
 
 ### init 函数的缺点
 
-* 无法很好的处理`init`内部的`error`，因为无法返回值
+* 无法很好的处理`init`内部的`error`，因为无法返回值。
 
-* 不能方便的测试`init`中的逻辑
+* 不能方便的测试`init`中的逻辑。
 
 * 如果在`init`中初始化资源，需要提前声明全局变量，然后赋值给它。而全局变量的使用迈向了另外的充满坑的世界。
 
@@ -205,6 +222,7 @@ func init() {
 </td><td>
 
 ```go
+// 直接干掉init函数
 var _defaultFoo = Foo{
     // ...
 }
@@ -286,37 +304,6 @@ func loadConfig() Config {
 todo Go sql
 [design-patterns-in-gos-databasesql-package](https://eli.thegreenplace.net/2019/design-patterns-in-gos-databasesql-package/)
 
-## 🚩只在 main 函数中退出
-使用`os.Exit`或者`log.Fatal`退出
-
-`log.Fatal`内部使用`os.Exit`
-
-## 🚩尽量不要使用 new
-因为`new`能做到的，其他的方式都能做到，而且做得更好。
-
-<table>
-<thead><tr><th>Bad</th><th>Good</th></tr></thead>
-<tbody>
-<tr><td>
-
-```go
-sval := T{Name: "foo"}
-
-// inconsistent
-sptr := new(T)
-sptr.Name = "bar"
-```
-
-</td><td>
-
-```go
-sval := T{Name: "foo"}
-
-sptr := &T{Name: "bar"}
-```
-
-</td></tr>
-</tbody></table>
 
 ## 🚩defer 函数：合理使用
 ### defer 的定义
@@ -324,15 +311,15 @@ sptr := &T{Name: "bar"}
 
 一句话总结：`defer`就是用来延迟执行函数的技术手段。
 
-虽然只有短短一句话，但是我们也可以获得很多。
+虽然只有短短一句话，但是我们也可以从中获取很多信息：
 
-来来来，我们先来总结一下，（更多的内容将在下文展开论述）。
+1、`defer`后面跟函数:`defers the execution of a `**`function`**（和方法`method`，后文会讲到方法`method`本质上就是函数`function`）。
 
-1、`defer`后面跟函数:`defers the execution of a `**`function`**。
+2、`defer`的作用就是在特定时机激活后接的函数:`the execution`。
 
-2、`defer`的作用就是激活后接的函数:`the execution`.
+3、所谓的特定时机:`until the surrounding function returns`。
 
-3、运行时机:`until the surrounding function returns`.
+我们会发现，下面这句话就是对上述三条总结的再次说明。
 
 > A "defer" statement invokes a function whose execution is deferred to the moment the surrounding function returns, either because the surrounding function executed a return statement, reached the end of its function body, or because the corresponding goroutine is panicking.
 
@@ -341,7 +328,7 @@ sptr := &T{Name: "bar"}
 
 它的出现就是为了更加便利的进行资源管理，减轻程序员的心智负担，提高代码的可读性、可维护性和可扩展性。
 
-假如`Go`没有`defer`机制，为了实现一个受保护的文件操作。我们得这么写
+假如`Go`没有`defer`机制，为了实现一个锁保护的文件操作。我们得这么写：
 
 ```Go
 func writeToFile(fname string, data []byte, mu *sync.Mutex) error {
@@ -386,9 +373,11 @@ func writeToFile(fname string, data []byte, mu *sync.Mutex) error {
 
 就像老奶奶的裹脚布——又臭又长。
 
-程序员每次操作，都得处理资源的释放：锁的释放、文件句柄的关闭。仅仅两个资源的释放操作，就得『如临深渊，如履薄冰』。增加资源的参与数，那简直不堪设想。
+我们每次操作，都得处理资源的释放：锁的释放、文件句柄的关闭。
 
-幸好，我们的`Go`有`defer`机制，我们可以改写如下
+仅仅两个资源的释放操作，我们在编写代码就需要『如临深渊，如履薄冰』。增加资源的参与数，那简直不堪设想。
+
+幸好，`Go`有`defer`机制，我们可以改写如下：
 
 ```go
 func writeToFile(fname string, data []byte, mu *sync.Mutex) error {
@@ -420,29 +409,29 @@ func writeToFile(fname string, data []byte, mu *sync.Mutex) error {
 
 ### defer 的特性
 
-上面对`defer`的描述，只是非常粗糙的讲解。下面讲述为了释放资源，延迟执行，`defer`的具体规定细节。
+上面对`defer`的描述，只是非常粗糙的讲解。下面让我们沉浸到`defer`的具体技术细节。
 
-比如
+为了讨论一个技术，提出好的问题是理解其要领的因素之一。比如：
 
-`defer`后接函数，那么函数的参数什么时候确定？（要知道同样的变量，在函数退出时与刚进入函数时，内容可能是不一样的）可以后接方法吗？
+* `defer`后接函数，那么函数的参数什么时候确定？（要知道同样的变量，在函数退出时与刚进入函数时，内容可能是不一样的）
+* 可以后接方法吗？
 
-`defer`后的函数真正执行时机是：声明`defer`表达式的函数执行结束时。那么这个所谓的函数执行结束时，是返回后，还是返回前？还是其他什么时间点？
+* `defer`后的函数真正执行时机是：声明`defer`表达式的函数执行结束时。那么这个所谓的函数执行结束时，是返回后，还是返回前？还是其他什么时间点？
+* 如果一个函数之中，声明了多个`defer`表达式，虽然都是函数退出时调用，但是它们执行的顺序如何？随机的？（像`select channel`一样）？先进先出？（越先被`defer`的函数越早调用）？还是先进后出？
 
-如果一个函数之中，声明了多个`defer`表达式，虽然都是函数退出时调用，但是它们执行的顺序如何？随机的？（像`select channel`一样）？先进先出？（越先被`defer`的函数越早调用）？先进后出？
-
-来吧，让我们回答上面的问题。
+没错，有很多问题会萦绕心头。来吧，让我们回答上面的问题。
 
 不过在此之前，学习两个英文单词。
 
 `execution`：中文是执行的意思。比如函数的执行，就是运行函数的意思。
 
-`evaluate`：中文是评价、估计的意思。在编程里面，比如函数参数，当我们说`evaluate function parameters`，就是确定函数参数值的意思。嗯，`evaluate`可以翻译成确定。
+`evaluate`：中文是评价、估计的意思。在编程里面，比如函数参数，当我们说`evaluate function parameters`，就是确定函数参数值的意思。嗯，`evaluate`可以翻译成「求值」。
 
-下面进入正题
+下面进入正题：
 
-1、defered function evaluates its parameter when is occur
+**1、defered function evaluates its parameter when is occur**
 
-被`defer`的函数会立马确定后接函数参数
+被`defer`的函数会立马求值函数的参数
 
 ```go
 func print(num int) {
@@ -463,15 +452,18 @@ func main() {
 }
 ```
 
-会打印`666`。这就叫做当出现`defer`时，后接函数的参数立马被确定，即`i=666`。虽然`defer`在后面才会执行，但是参数的确定是在一开始就确定了。
+会打印`666`而不是`888`。
 
-2、defered function will execute before real return
+这就叫做当出现`defer`时，后接函数的参数立马被求值，继而确定，即`i=666`。
 
+虽然`deferred function`在后面才会执行，但是参数从一开始就确定了。
+
+**2、defered function will execute before real return**
 被`defer`的函数会在调用它的函数返回前执行
 
 这句话不好理解。重点在于什么叫做`real return`。
 
-休息一下，下面的例子需要仔细看
+休息一下，下面的例子需要仔细看：
 
 ```go
 func sara() (result int) {
@@ -483,7 +475,6 @@ func sara() (result int) {
     }()
 
     return result
-
 }
 
 func lisa() int {
@@ -507,9 +498,9 @@ func main() {
 }
 ```
 
-可以观察到，`sara`和`lisa`基本逻辑是一样的，唯一的不同就是`sara`是具名返回值函数，而`lisa`是匿名返回值函数。这就是大大的不同了。
+可以观察到，`sara`和`lisa`基本逻辑是一样的，唯一的不同就是`sara`是具名返回值函数，而`lisa`是匿名返回值函数。而这一点区别可太重要了，直接导致不同的处理逻辑。
 
-好好理解一下上面的例子，下面给出`go`函数的返回值模型
+好好理解一下上面的例子，下面给出`Go`函数的返回值模型
 
 其实`go`的`return`语句是分成两部分的。比如对于匿名返回值函数`lisa`来说
 
@@ -521,7 +512,7 @@ return result
 2、return ret
 ```
 
-对于具名返回值函数sara来说
+对于具名返回值函数`sara`来说
 
 ```go
 return result
@@ -535,12 +526,12 @@ return result
 
 重点来啦，`defer`的运行时机就是步骤`1`和步骤`2`之间！
 
-所以对于`lisa`来说，我要返回的是`ret`，就算你在`defer`中修改了`result`，也不会影响到最终返回值哦。但是`sara`就不一样了，她返回的就是`result`，在`defer`中修改了`result`，最终的结果就不一样啦。
+* 对于普通函数`lisa`来说，我要返回的是`ret`，就算你在`defer`中修改了`result`，也不会影响到最终返回值哦。
+* 对于具名返回值函数`sara`就不一样了，她返回的就是`result`，在`defer`中修改了`result`，最终的结果就不一样啦。
 
 咳咳，具名返回值和`defer`的联合使用，要注意哦😑。别写这样的代码。
 
-3、多个`defer`的执行的顺序是：后进先出，类似栈
-
+**3、多个`defer`的执行的顺序是：后进先出，类似栈**
 ```golang
 func print(num int) {
     fmt.Println(num)
@@ -552,7 +543,6 @@ func bob() {
     defer print(3)
 
     return
-
 }
 
 func main() {
@@ -572,9 +562,9 @@ func main() {
 
 `defer`出现就是为了资源的管理。
 
-比如如果有以下这个过程：首先获取资源`A`，然后获取资源`B`，最后获取资源`C`才能执行某个操作，那么`defer`的顺序，肯定是先放回`C`资源，然后`B`资源，最后是`A`资源。
+比如有以下这个过程：首先执行某个操作，需要首先获取资源`A`，然后获取资源`B`，最后获取资源`C`。那么`defer`的顺序，肯定是先放回`C`资源，然后`B`资源，最后是`A`资源。
 
-这个过程让我想起来的举证的乘法和逆运算——逆矩阵。
+这个过程让我想起线性代数中矩阵的乘法和逆运算——逆矩阵。
 
 比如`AB`，表示矩阵`A`乘以矩阵`B`，那么它俩的逆运算呢？
 
@@ -582,17 +572,50 @@ $(AB)^{-1} = B^{-1}A^{-1}$
 
 当时为了记住这个特性，我是记住了下面的这个类比：
 
-先穿袜子，然后穿裤子；如果这一过程反过来，那就是先拖鞋，再脱袜子。
+先穿袜子，然后穿鞋子；如果这一过程反过来，那就是先拖鞋，再脱袜子。
 
 `nice`。
+
+你不能先脱袜子，再拖鞋啊！
 
 如今看来，不论是穿衣服、矩阵乘法、资源的管理，都是一种行为、一种运动、一种变化。他们是分先后的，所以他们的“反运动”要与正向运动相反。
 
 ### 不要在循环中滥用 defer
-详见`Go`编程指引与陷阱`2`中的`for`循环章节
+详见`Go`编程指引与陷阱`2`控制结构中的`for`循环章节。
 
+## 🚩只在 main 函数中退出
+使用`os.Exit`或者`log.Fatal`退出
 
-## 🚩对函数进行显示类型转换
+`log.Fatal`内部使用`os.Exit`
+
+## 🌵尽量不要使用 new
+因为`new`能做到的，其他的方式都能做到，而且做得更好。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+sval := T{Name: "foo"}
+
+// inconsistent
+sptr := new(T)
+sptr.Name = "bar"
+```
+</td><td>
+
+```go
+sval := T{Name: "foo"}
+
+sptr := &T{Name: "bar"}
+```
+</td></tr>
+</tbody></table>
+
+使用`new`徒增代码行数。
+
+## 🌵灵活对函数进行类型转换
 像对整型变量那样`int64(13240366)`
 ```go
 func greeting(w http.ResponseWriter, r *http.Request) {
@@ -600,15 +623,29 @@ func greeting(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    // 直接传递greeting是会出错的!
+    // 直接传递greeting是会编译出错的
+    // 因为ListenAndServe第二参数需要Handler类型
 
 	//http.ListenAndServe(":8080", http.HandlerFunc(greeting))
 	http.ListenAndServe(":8080", greeting) 
 }
 ```
-`ps`：经过`http.HandlerFunc`转换之后就可以用了哈。
+为了满足Handler接口，只需要简单的进行一次转换。堪称魔法。
+```go
+// net/http/server.go 
+type Handler interface {
+	ServeHTTP(ResponseWriter, *Request)
+}
 
-(如果对此感兴趣，可参考本人拙作[Go语言系列之HTTP服务器](https://zhuanlan.zhihu.com/p/588192056?))
+// 魔法！
+type HandlerFunc func(ResponseWriter, *Request)
+
+// ServeHTTP calls f(w, r).
+func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
+	f(w, r)
+}
+```
+本质上就是一种强制类型转换，然后转换后的类型实现了`Handler`接口。
 
 本质上相同的行为
 ```go
@@ -633,10 +670,12 @@ func main() {
 }
 ```
 
-## 🚩了解变长参数的妙用
+如果对该主题感兴趣，可参考本人拙作[Go语言系列之HTTP服务器](https://zhuanlan.zhihu.com/p/588192056?)
+
+## 🌵了解变长参数的妙用
 ### 基本特点-常见
-如同空气一般，常见常用但往往没有引起人们的注意。
-比如
+
+接收变长参数的函数如同空气一般：常见常用但往往没有引起人们的注意。比如：
 ```go
 func Printf(format string, a ...interface{}) (n int, err error) 
 
@@ -645,7 +684,10 @@ func Sprintf(format string, a ...interface{}) string
 func append(slice []Type, elems ...Type) []Type
 ```
 ### 基本使用
-* 函数内使用-如同切片一般
+* 函数内使用
+
+**对待变长参数如同切片一般。**
+
 ```go
 func sum(arr ...int) int {
 	var t int
@@ -658,9 +700,10 @@ func sum(arr ...int) int {
 
 * 函数外使用
 
-1、可`t...`使用，其中`t`是`[]T`切片类型
+1、可`ts...`使用，其中`ts`是`[]T`切片类型。
 
-2、可多个`T`使用
+2、可多个`T`使用。
+
 ```go
 // ok
 sum(1,2,3)
@@ -687,10 +730,12 @@ func main() {
 `ps`:都怪标准库里面的`printf`😂
 
 ### 变长参数+类型验证=重载函数
-* 一个我们需要的拼接函数
-```go
 
-// SliceJoin 重载之
+* 一个我们经常用到的拼接函数
+
+将传入的参数通过指定的连接符串联起来，返回一个字符串。
+
+```go
 func SliceJoin(sep string, nums ...interface{}) string {
 	if len(nums) == 0 {
 		return ""
@@ -877,7 +922,7 @@ type StructB struct {
 
 外层的结构体完全复制了里层的结构体的方法。
 
-**内嵌结构体最大的特点就是暴露了里层的方法，哪怕这些方法并不想被外面的调用者使用。**
+**内嵌结构体最大的特点以及缺点就是暴露了被潜入结构体的方法，哪怕这些方法并不想被外面的调用者使用。**
 
 ### 内嵌结构体的缺点
 * 初始化不方便
@@ -891,12 +936,12 @@ type Outer struct {
 }
 
 func main() {
+  // 如果想给内嵌结构体Inner的字段赋值，需要两步
 	o := Outer{}
-
 	fmt.Println(o.in) // 直接引用Inner的字段
-	o.in = "555"      // 直接设置Inner的字段
-
-	// 可以在初始化的时候赋值in字段吗？
+	o.in = "555"      
+	
+	// 不可以在初始化的时候直接赋值in字段
 	_ := Outer{in: "666"} // Unknown field 'in' in struct literal 
 }
 ```
@@ -956,16 +1001,11 @@ func (m *SMap) Get(k string) string {
 
 <tr><td>
 
-内嵌的`Mutex`的`Lock`、`Unlock`方法被暴露给调用者
+内嵌的`Mutex`的`Lock`、`Unlock`方法被暴露给调用者。
 
-The `Mutex` field, and the `Lock` and `Unlock` methods are unintentionally part
-of the exported API of `SMap`.
-
+可能会发生内部实现和外部使用者同时调用`Lock/Unlock`的情形。
 </td><td>
-
-The mutex and its methods are implementation details of `SMap` hidden from its
-callers.
-
+标准的支持并发读写的map实现。
 </td></tr>
 </tbody></table>
 
@@ -1008,6 +1048,8 @@ func main() {
 
 ## 🚩类型与其方法定义在同一个包
 
+别给他们搞分家。
+
 ## 🚩可以绑定 method 的类型
 `receiver`参数的基类型本身不能是指针类型/接口类型
 
@@ -1045,7 +1087,7 @@ func (p *Person) SetName(name string) {
 
 下面来讨论两者之间的区别。
 
-其实`Go`的`value/pointer receiver`区别非常明显、简单。总结来说，就是如下：
+其实`Go`的`value/pointer receiver`区别非常明显、简单。如下：
 
 > value methods can be invoked by value and pointer receiver, but pointer methods can be only invoked by pointer receiver.
 
@@ -1077,9 +1119,24 @@ pointer.SetName("xxx")
 
 `SetName`作为一个`pointer method`，被`pointer receiver`调用，这没问题。为什么也能被`value receiver`调用？这究竟是为什么？
 
-根本原因是Go会默默的做隐式转换。而我认为，**这个问题因为Go的隐式转换将其复杂化了**。
+**根本原因是`Go`会默默的做隐式转换。**
 
-* `Go`会帮我们做默认的转化。
+```go
+// value methods can be invoked by value and pointer receiver
+// GetName是一个value method
+value.GetName()
+pointer.GetName()  // 相当于(*pointer).GetName()
+
+//	pointer methods can be only invoked by pointer receiver.
+// SetName是一个pointer method
+pointer.SetName("xxx") 
+value.SetName("why") // 相当于(&value).SetName("why")
+```
+看明白了吗。`Go`会帮助我们在适当的位置添加`&`、`*`操作符。
+
+而我认为，**这个问题因为Go的隐式转换将其复杂化了**。
+
+再看下面的例子：
 
 ```go
 // 不管是val / pointer receiver,都可以通过语法糖的形式调用 pointer/val receiver method
@@ -1133,10 +1190,21 @@ func main() {
 }
 ```
 
-**Methods with value receivers can be called on pointers as well as values. Methods with pointer receivers can only be called on pointers or addressable values.**
-为什么要有以上的规定？
+想必第一步的测试，我们已经懂得了。
 
-## 🚩value receiver 是需要复制类型的
+第二步，`Go`本来也想帮我们取`P struct`实例的地址，以便符合`printer`接口，但是因为`Go map`的值是不能取地址，所以编译出错。
+
+关于`Go map`键值对的值不能被取地址，可以参考本系列第一节「基础数据结构」中`map`部分的讲解。
+
+总结来看：
+
+**Methods with value receivers can be called on pointers as well as values. Methods with pointer receivers can only be called on pointers or addressable values.**
+
+* 指针的`*`解引用，不会出错，是一定成立的。
+* 值对象取地址操作就不是一定成立的了。
+
+## 🚩value receiver 调用方法，是需要复制类型的
+
 原因很简单，因为`method`就是`function`，`value receiver`作为函数的第一个参数，本质上就是复制。
 
 ```go
@@ -1170,7 +1238,9 @@ in main &c=0xc00000a060, &(c.s)=0xc00000a068
 byValMethod got &c=0xc00000a080, &(c.s)=0xc00000a088
 byPtrMethod got &c=0xc00000a060, &(c.s)=0xc00000a068
 ```
-## 🚩修改类型状态要用 pointer receiver
+## 🚩pointer receiver 调用方法可以修改状态值
+因为传递的第一个参数，本来就是指针类型，内部当然可以修改其状态（字段值）。
+
 ```go
 package main
 
@@ -1208,136 +1278,13 @@ func main() {
   fmt.Println(c.counters)
 }
 ```
-这段程序会panic。但只要修改一个字符就可以完美运行。
+这段程序会`panic`。但只要修改一个字符就可以完美运行。
 
 ## 🌵method 的接受者类型最好统一
 **要么全是`method with value`，要么全是`method with pointer`**
 
 当然是有例外的
 todo
-
-# empty interface 空接口
-
-我觉得在Go中，空接口与非空接口完全表现为两种不同的事物，所以我打算分开来讨论。
-
-## 🚩尽量避免使用空接口作为函数的参数类型
-
-> 空接口不提供任何信息。   —— Rob Pike, Go语言之父
-
-# interface 非空接口
-
-**中心思想：接口中的方法越多，这个接口越不通用**
-
-> The bigger the interface, the weaker the abstraction.
-
-## 🌵name
-通常来说，如果`interface`只有一个`method`，那么该`interface`的名字：`method`的名称`+er`，比如`Reader`、`Writer` 等等
-
-> By convention, one-method interfaces are named by the method name plus an -er suffix or
-
-## 🌵显式验证：某个类型实现指定的接口
-```go
-// 验证structA是否实现了interfaceA
-var _ interfaceA = (*structA)(nil)
-```
-体现了`interface`类型的静态性。
-
-既然是静态性，也就是编译期间的检查，一些运行时的出错就在所难免。
-
-所谓的运行时错误，那就是内嵌`interface`的时候。
-```go
-type MyStruct struct{}
-
-// 内嵌error interface
-type MyError struct {
-	error
-}
-
-func main() {
-	var _ error = (*MyStruct)(nil) // *MyStruct does not implement error (missing Error method)
-	
-	var _ error = (*MyError)(nil) // ok 
-	
-	var e error = &MyError{}  // ok
-
-	fmt.Println(e.Error()) // panic: runtime error: invalid memory address or nil pointer dereference
-}
-```
-
-## 🚩内嵌 interface
-
-内嵌`interface`一共分为两种形式
-
-* `interface`内嵌`interface`
-* `struct`内嵌`interface`
-
-第一种，`interface`内嵌`interface`很常见，也很容易理解。比如
-```go
-// io/io.go
-type Reader interface {
-	Read(p []byte) (n int, err error)
-}
-
-type Writer interface {
-	Write(p []byte) (n int, err error)
-}
-
-// 内嵌interface，扩大interface的方法
-type ReadWriter interface {
-	Reader
-	Writer
-}
-```
-
-关键在于第二种，`struct`内嵌`interface`，这是什么组合？这有什么道理？
-todo:[文章阅读](https://eli.thegreenplace.net/2020/embedding-in-go-part-3-interfaces-in-structs)/
-
-
-## 🚩当心直接返回 interface 的情况
-```go
-type MyError struct {
-	error
-}
-
-var ErrBad = MyError{
-	error: errors.New("bad error"),
-}
-
-func bad() bool {
-	return false
-}
-
-func returnsError() error {
-	var p *MyError = nil // 📢
-	if bad() {
-		p = &ErrBad
-	}
-	return p
-}
-
-func main() {
-	e := returnsError()
-	if e != nil {
-		fmt.Printf("error: %+v\n", e) // error: <nil>
-		return
-	}
-	fmt.Println("ok")
-}
-```
-体现了`interface`的动态性
-
-其动态性包含两部分：动态类型、动态类型的值。
-
-此例子就是因为返回的`error`接口类型的动态类型不为`nil`，`main`里面的`e`就不为`nil`。
-
-## 🚩尽量定义小接口
-
-> 接口越大，抽象程度越低。（一个人的能力越大，他的责任也就越大）
-
-但是我们不得不说，在项目初期，很难分辨和抽象出实用的小接口。也就是说初期可不在意接口的大小，因为对问题的理解是循序渐进的，毕竟标准库的`io.Reader/io.Writer`也不是一开始就确定的。
-
-
-
 
 ## 参考
 * `白明《Go语言精进之路》(📚)`
