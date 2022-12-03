@@ -10,6 +10,22 @@
   🈲：表示「这个就别做到了」，如果不知道就非常可能出问题。
 
 
+- [time](#time)
+  - [🌵使用time来处理时间](#🌵使用time来处理时间)
+  - [🌵使用time.Duration处理时间段](#🌵使用time-duration处理时间段)
+  - [🌵谨慎使用time.After](#🌵谨慎使用time-after)
+- [json](#json)
+  - [🌵marshal 一个map的顺序](#🌵marshal一个-map的顺序)
+  - [🌵JavaScript parses integers as floats and your int64 might overflow](#🌵javascript-parses-integers-as-floats-and-your-int64-might-overflow)
+- [http](#http)
+  - [🌵Prefer http.HandlerFunc over http.Handler](#🌵prefer-http-handlerfunc-over-http-handler)
+  - [🚩always close http body aka defer r.Body.Close()](#🚩always-close-http-body-aka-defer-r-body-close)
+  - [🚩should read http body regardless the use of http body](#🚩should-read-http-body-regardless-the-use-of-http-body)
+  - [想要复用TCP连接](#想要复用tcp连接)
+  - [不想复用TCP连接](#不想复用tcp连接)
+- [参考](#参考)
+
+
 ## time
 ### 🌵使用time来处理时间
 
