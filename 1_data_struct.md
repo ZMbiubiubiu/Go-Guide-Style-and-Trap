@@ -9,35 +9,36 @@
   🈲：表示「这个就别做到了」，如果不知道就非常可能出问题。
   
 - [slice](#slice)
-  - [🌵1、nil slice可以直接append](#🌵1、nil-slice可以直接append)
+  - [🌵1、nil slice 可以直接 append](#🌵1、nil-slice可以直接-append)
   - [🌵2、合理的初始化](#🌵2、合理的初始化)
-  - [🚩3、append时，使用原来的切片变量进行接收](#🚩3、append时，使用原来的切片变量进行接收)
-  - [🚩4、正确使用copy复制函数](#🚩4、正确使用copy复制函数)
+  - [🚩3、append 时，使用原来的切片变量进行接收](#🚩3、append时，使用原来的切片变量进行接收)
+  - [🚩4、正确使用 copy 复制函数](#🚩4、正确使用-copy复制函数)
   - [🚩5、避免内存泄漏](#🚩5、避免内存泄漏)
   - [🚩6、从切片中新建另一个切片的方式](#🚩6、从切片中新建另一个切片的方式)
 - [map](#map)
   - [🌵1、合理的初始化](#🌵1、合理的初始化)
-  - [🌵2、实现某种类型的Set](#🌵2、实现某种类型的set)
-  - [🚩3、不要对map的遍历循序做任何假设](#🚩3、不要对map的遍历循序做任何假设)
+  - [🌵2、实现某种类型的 Set](#🌵2、实现某种类型的-set)
+  - [🚩3、不要对 map 的遍历循序做任何假设](#🚩3、不要对-map的遍历循序做任何假设)
   - [🚩4、不要在循环中的新增、删除，结果不确定](#🚩4、不要在循环中的新增、删除，结果不确定)
   - [🚩5、避免内存泄漏](#🚩5、避免内存泄漏)
   - [🚩6、不支持并发读写](#🚩6、不支持并发读写)
   - [🚩7、键值对的值不支持取地址操作](#🚩7、键值对的值不支持取地址操作)
-  - [🚩8、值为struct，不支持修改](#🚩8、值为struct，不支持修改)
+  - [🚩8、值为 struct ，不支持修改](#🚩8、值为-struct，不支持修改)
 - [string](#string)
-  - [🚩1、string是不可变类型](#🚩1、string是不可变类型)
-  - [🚩2、明确字面量、Unicode码点(rune)、UTF-8编码之间的关系](#🚩2、明确字面量、unicode码点-rune、-utf-8编码之间的关系)
+  - [🚩1、string 是不可变类型](#🚩1、string是不可变类型)
+  - [🚩2、明确字面量、Unicode码点(rune)、UTF-8 编码之间的关系](#🚩2、明确字面量、unicode码点-rune、-utf-8编码之间的关系)
   - [🌵3、恰当的字符串拼接](#🌵3、恰当的字符串拼接)
   - [🚩4、区分 string/[]string/byte/[]byte/rune/[]rune](#🚩4、区分-string-stringbyte-byterune-rune)
-  - [🌵5、编译器的优化之`[]byte->string`](#🌵5、编译器的优化之-byte-string)
-  - [🌵6、编译器优化之`string->[]byte`](#🌵6、编译器优化之-string-byte)
+  - [🌵5、编译器的优化之 []byte->string](#🌵5、编译器的优化之-byte-string)
+  - [🌵6、编译器优化之 string->[]byte](#🌵6、编译器优化之-string-byte)
   - [🚩7、理解子字符串](#🚩7、理解子字符串)
   - [🚩8、避免内存泄漏](#🚩8、避免内存泄漏)
 - [参考](#参考)
 
 
+
 ## slice
-### 🌵1、nil slice可以直接append
+### 🌵1、nil slice 可以直接 append
 
 为什么单独拿出这一点？
 
@@ -72,7 +73,7 @@ var userIds []uint32
 
 而`[]uint32{}`，相当于`make([]uint32, 0)`
 
-### 🚩3、append时，使用原来的切片变量进行接收
+### 🚩3、append 时，使用原来的切片变量进行接收
 * 承接上文，若已知`append`元素的个数，初始化设定底层数组的大小。
 
 * 用原变量接收`append`之后的结果
@@ -83,7 +84,7 @@ arr = append(arr, 3)
 
 如果不这么做，很可能就会买入一个坑的世界。
 
-### 🚩4、正确使用copy复制函数
+### 🚩4、正确使用 copy 复制函数
 <table>
 <thead><tr><th>Bad</th><th>Good</th></tr></thead>
 <tbody>
@@ -257,9 +258,9 @@ ok      command-line-arguments  3.703s
 
 ```
 
-### 🌵2、实现某种类型的Set
+### 🌵2、实现某种类型的 Set
 ```go
-// struct{} or bool ？
+// struct{} or bool
 var set = make(map[int]bool)  
 ```
 
@@ -275,9 +276,9 @@ var set = make(map[int]bool)
 
 缺点：值为`true`我们可以理解，但是如果值为`false`是个什么意思？
 
-使用`bool`类型
+经过讨论，决定使用`bool`类型作为`Set`的值类型。
 
-### 🚩3、不要对map的遍历循序做任何假设
+### 🚩3、不要对 map 的遍历循序做任何假设
 这一点大家都知道，列出来表示结构完整。
 
 ### 🚩4、不要在循环中的新增、删除，结果不确定
@@ -427,7 +428,7 @@ func main() {
 	_ := &m["one"] // Cannot take the address of 'm["one"]'
 }
 ```
-### 🚩8、值为struct，不支持修改
+### 🚩8、值为 struct ，不支持修改
 
 ```go
 m := map[string]data{ // not ok
@@ -436,17 +437,19 @@ m := map[string]data{ // not ok
 }
 m["one"].name = "one"
 
+// 之所以不支持修改struct，我猜是因为修改相当于如下的操作
+// 修改的并不是原值
 tmp := m["one"]
 tmp.name = "one"
 ```
 ## string
-### 🚩1、string是不可变类型
+### 🚩1、string 是不可变类型
 ```go
 s := "hello world"
 s[0] = 56 // Cannot assign to s[0]
 ```
 
-### 🚩2、明确字面量、Unicode码点(rune)、UTF-8编码之间的关系
+### 🚩2、明确字面量、Unicode码点(rune)、UTF-8 编码之间的关系
 * `Go`字符串的每个字符都是`Unicode`字符.
 * `Go`的`Unicode`字符默认是`UTF-8`编码格式存储在内存当中的
 ```go
@@ -664,7 +667,7 @@ func main() {
 
 下面来看进行转换时，不需要进行内存分配的情况。
 
-### 🌵5、编译器的优化之`[]byte->string`
+### 🌵5、编译器的优化之 []byte->string
 要义在于`[]byte`是可变。
 
 如果转换成`string`且没有内存分配，对此时`string`的使用场景是由严格要求的
@@ -703,7 +706,7 @@ func main() {
 
 总结一下就是：`[]byte->string`，转换之后的`string`是临时的，`string`只是一个步骤的中间过程，一闪而过。
 
-### 🌵6、编译器优化之`string->[]byte`
+### 🌵6、编译器优化之 string->[]byte
 主要就是`for`循环中
 ```go
 // 其中s是上述代码所示的 "world"

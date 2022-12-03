@@ -27,11 +27,11 @@
 
 
 ## time
-### 🌵使用time来处理时间
+### 🌵使用 time 来处理时间
 
 If you are comparing timestamps, use time.Before or time.After. Don't use time.Sub to get a duration and then check its value.
 
-### 🌵使用time.Duration处理时间段
+### 🌵使用 time.Duration 处理时间段
 ```go
 // BAD
 delay := time.Second * 60 * 24 * 60
@@ -63,7 +63,7 @@ poll(10) // was it seconds or milliseconds?
 
 </td><td>
 
-### 🌵谨慎使用time.After
+### 🌵谨慎使用 time.After
 > Remember that the resources created will only be released when the timer expires.
 
 所以不建议在`for`循环、`HTTP`请求等重复执行的代码逻辑中，使用`time.After`
@@ -76,7 +76,7 @@ defer ticker.Stop()
 
 ## json
 
-### 🌵marshal 一个map的顺序
+### 🌵marshal 一个 map 的顺序
 虽然`map`本身是没有顺序可言的，但是`json.Marshal map`，会按照`map`的key作为排序规则
 ```go
 english := map[string]int{
@@ -123,10 +123,10 @@ type Request struct {
 io.Copy(ioutil.Discard, resp.Body) // if you don't use http body
 ```
 
-### 想要复用TCP连接
+### 想要复用 TCP 连接
 读取`response.Body`的内容 并且 读取之后调用`r.Body.Close()`
 
-### 不想复用TCP连接
+### 不想复用 TCP 连接
 * request.Closed = true
 * client.Transport.KeepAlive=false
 

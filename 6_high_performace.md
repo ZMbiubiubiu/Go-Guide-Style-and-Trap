@@ -8,9 +8,9 @@
 
   🈲：表示「这个就别做到了」，如果不知道就非常可能出问题。
 
-## 🚩理解CPU Cache原理
+## 🚩理解 CPU Cache 原理
 
-## 🚩理解data alignment内存对齐
+## 🚩理解 data alignment 内存对齐
 
 ## 🚩区分 stack vs heap
 
@@ -18,16 +18,16 @@
 ## 🚩理解如何减少内存分配
 
 
-## 🚩理解inlining内联
+## 🚩理解 inlining 内联
 
 
-## 🚩理解Go诊断工具
+## 🚩理解 Go 诊断工具
 
 
-## 🚩理解Go GC工作原理
+## 🚩理解 Go GC 工作原理
 
 
-## 🚩理解Go如何在Docker/K8S内部如何运行
+## 🚩理解Go如何在 Docker/K8S 内部如何运行
 
 ## 参考
 * `白明《Go语言精进之路》(📚)`
