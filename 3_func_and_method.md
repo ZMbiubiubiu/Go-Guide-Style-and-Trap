@@ -10,7 +10,7 @@
   🈲：表示「这个就别做到了」，如果不知道就非常可能出问题。
   
 - [function函数](#function函数)
-  - [🌵函数定义的规范行为](#🌵函数定义的规范行为)
+  - [🌵function定义的规范行为](#🌵function定义的规范行为)
     - [若参数有 context.Context 类型，必做第一个参数](#若参数有context-context类型，必做第一个参数)
     - [若返回 error，必将最后一个返回值](#若返回error，必将最后一个返回值)
     - [同一类型的参数可以合并](#同一类型的参数可以合并)
@@ -46,12 +46,15 @@
     - [内嵌结构体](#内嵌结构体)
     - [内嵌结构体的缺点](#内嵌结构体的缺点)
 - [method](#method)
-  - [🚩类型与其方法定义在同一个包](#🚩类型与其方法定义在同一个包)
-  - [🚩可以绑定 method 的类型](#🚩可以绑定method的类型)
-  - [🚩明晰 value vs pointer receiver](#🚩明晰value-vs-pointer-receiver)
+  - [🚩method 的本质](#🚩method的本质)
+  - [🚩明晰 values/pointer method 对 receiver 的影响](#🚩明晰valuespointer-method对-receiver的影响)
+  - [🚩明晰 value vs pointer method](#🚩明晰value-vs-pointer-method)
   - [🚩value receiver 调用方法，是需要复制类型的](#🚩value-receiver调用方法，是需要复制类型的)
   - [🚩pointer receiver 调用方法可以修改状态值](#🚩pointer-receiver调用方法可以修改状态值)
-  - [🌵method 的接受者类型最好统一](#🌵method的接受者类型最好统一)
+  - [🚩可以绑定 method 的类型](#🚩可以绑定method的类型)
+  - [🚩method定义的规范行为](#🚩method定义的规范行为)
+    - [类型与其方法定义在同一个包](#类型与其方法定义在同一个包)
+  - [method 的接受者类型最好统一](#method的接受者类型最好统一)
   - [参考](#参考)
 
 
@@ -72,7 +75,7 @@ type HandlerFunc func(ResponseWriter, *Request)
 
 后面也会探讨在函数的定义和使用中容易出错的方式和场景，不过在此之前，让我们先对函数的使用做一些规范，以便达成共识。
 
-## 🌵函数定义的规范行为
+## 🌵function定义的规范行为
 ### 若参数有 context.Context 类型，必做第一个参数
 ```go
 func getContent(ctx content.Context, ...) error
@@ -1044,37 +1047,21 @@ func main() {
 
 
 # method
-`Go`方法的本质：就是以`receiver`类型的实例作为第一个参数的**函数**。
 
-## 🚩类型与其方法定义在同一个包
+## 🚩method 的本质
 
-别给他们搞分家。
+`method`就是以`receiver`作为第一个参数的**函数**。没错，`method`就是函数。
 
-## 🚩可以绑定 method 的类型
-`receiver`参数的基类型本身不能是指针类型/接口类型
+## 🚩明晰 values/pointer method 对 receiver 的影响
 
-> methods can be defined for any named type (except a pointer or an interface); the receiver does not have to be a struct.
-> -- < Effective Go >
+什么是`value method`,什么是`pointer method`，直接看示例
 
-```go
-// pointer指针不能绑定method
-type PtrInt *int
-
-// error: Invalid receiver type 'PtrInt' ('PtrInt' is a pointer type)
-func (p PtrInt) Hello() {
-	fmt.Println("hello")
-} 
-```
-
-## 🚩明晰 value vs pointer receiver
-
-* 什么是`value receiver`,什么是`pointer receiver`？
 ```go
 type Person struct {
 	Name string
 }
 
-// value receiver
+// value method
 func (p Person) GetName() string {
 	return p.Name
 }
@@ -1085,9 +1072,53 @@ func (p *Person) SetName(name string) {
 }
 ```
 
-下面来讨论两者之间的区别。
+明白了`value method`和`pointer method`，回到上面提到的「`method`本质上就是将`receiver`作为第一个参数的函数」。
 
-其实`Go`的`value/pointer receiver`区别非常明显、简单。如下：
+那么既然是函数参数，就存在函数参数复制的问题。
+
+下面通过一段示例代码来看下这个问题。
+```go
+package main
+
+import "fmt"
+
+type Container struct {
+  i int
+  s string
+}
+
+func (c Container) byValMethod() {
+  fmt.Printf("byValMethod got &c=%p, &(c.s)=%p\n", &c, &(c.s))
+}
+
+func (c *Container) byPtrMethod() {
+  fmt.Printf("byPtrMethod got &c=%p, &(c.s)=%p\n", c, &(c.s)) // 注意这里第一个c没有取地址符号
+}
+
+func main() {
+  var c Container
+  fmt.Printf("in main &c=%p, &(c.s)=%p\n", &c, &(c.s))
+
+  c.byValMethod()
+  c.byPtrMethod()
+}
+
+// 输出结果
+in main &c=0xc00000a060, &(c.s)=0xc00000a068
+byValMethod got &c=0xc00000a080, &(c.s)=0xc00000a088
+byPtrMethod got &c=0xc00000a060, &(c.s)=0xc00000a068
+```
+
+* `byValMethod`中打印的地址与`main`中完全不同，这是因为它的`receiver`是通过`c`复制产生的。
+* `byPtrMethod`中打印的地址与`main`中完全相同，这是因为它本身打印的就是`c`的地址。
+
+
+
+## 🚩明晰 value vs pointer method
+
+这一节主要讨论两者之间的区别。
+
+其实`Go`的`value/pointer method`区别非常明显。如下：
 
 > value methods can be invoked by value and pointer receiver, but pointer methods can be only invoked by pointer receiver.
 
@@ -1280,7 +1311,29 @@ func main() {
 ```
 这段程序会`panic`。但只要修改一个字符就可以完美运行。
 
-## 🌵method 的接受者类型最好统一
+## 🚩可以绑定 method 的类型
+`receiver`参数的基类型本身不能是指针类型/接口类型
+
+> methods can be defined for any named type (except a pointer or an interface); the receiver does not have to be a struct.
+> -- < Effective Go >
+
+```go
+// pointer指针不能绑定method
+type PtrInt *int
+
+// error: Invalid receiver type 'PtrInt' ('PtrInt' is a pointer type)
+func (p PtrInt) Hello() {
+	fmt.Println("hello")
+} 
+```
+
+## 🚩method定义的规范行为
+
+### 类型与其方法定义在同一个包
+
+别给他们搞分家。
+
+## method 的接受者类型最好统一
 **要么全是`method with value`，要么全是`method with pointer`**
 
 当然是有例外的
