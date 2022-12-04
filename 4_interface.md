@@ -31,16 +31,55 @@
 
 > A type satisfies an interface if it possesses all the methods the interface requires.
 
-todo补充一个较好且合适的例子
-```go
-
-```
-
-> What makes Go's interfaces so distinctive is that they are satisfied implicitly.
-
 `Go`的类型只要实现了指定`interface`中要求的方法集合，那么就默认了该类型满足指定`interface`。
 
-那如果我们想要显式判断，该如何做呢？
+直接来看我们平时用的最多的函数家族——`fmt`包下的格式化函数们。
+```go
+func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error)
+
+func Printf(format string, a ...interface{}) (n int, err error) {
+	return Fprintf(os.Stdout, format, a...)
+}
+```
+我们可以看到`Printf`函数内部直接调用`Fprintf`，并且第一个参数传递`os.Stdout`。
+
+之所以能这么用，需要：`os.Stdout`满足`io.Writer`接口。
+
+首先看下`io.Writer`接口的定义。
+```go
+// io/io.go
+type Writer interface {
+	Write(p []byte) (n int, err error)
+}
+```
+
+其次看下`os.Stdout`是何物。
+```go
+// os/file.go
+Stdout = NewFile(uintptr(syscall.Stdout), "/dev/stdout")
+
+func NewFile(fd uintptr, name string) *File
+```
+`os.Stdout`是`*os.File`类型，那么它是否真的实现了`io.Writer`接口中的`Write`方法呢？
+
+我们继续跟踪。
+```go
+// os/file.go
+
+// Write writes len(b) bytes to the File.
+// It returns the number of bytes written and an error, if any.
+// Write returns a non-nil error when n != len(b).
+func (f *File) Write(b []byte) (n int, err error)
+```
+
+正如大家所见，`*os.File`类型只是定义了`Write`方法，并没有显式的声明它实现了`io.Writer`接口哈。
+
+这就是所谓的`satified implicitly`。
+
+> What makes Go's interfaces so distinctive is that they are satisfied implicitly.  
+> -- 《The Go Programming Language》
+
+行吧，我们已经接受在`Go`中，接口的满足与否都是默默工作的。那如果我们想要显式判断，该如何做呢？
 
 ### 🌵显式的验证类型实例是否满足指定接口
 ```go
