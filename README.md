@@ -1,4 +1,6 @@
 # 主题
+<img width="454" alt="image" src="https://user-images.githubusercontent.com/30595874/205540269-168d599f-c2ff-40b3-bc43-e4032bbba8a8.png">
+
 涵盖`Go`编程中常见的容易导致`bug`的用法，以及针对的方法和规范
 
 * 写作本系列的理由
