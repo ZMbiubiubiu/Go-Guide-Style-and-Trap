@@ -23,7 +23,7 @@
     - [init 函数的特点](#init函数的特点)
     - [init 函数的缺点](#init函数的缺点)
     - [init 万一使用，需要满足](#init万一使用，需要满足)
-    - [使用 init 函数的成功案例](#使用init函数的成功案例)
+    - [使用 init 函数的经典案例](#使用init函数的经典案例)
   - [🚩defer 函数：合理使用](#🚩defer函数：合理使用)
     - [defer 的定义](#defer的定义)
     - [为什么要有 defer](#为什么要有defer)
@@ -302,11 +302,101 @@ func loadConfig() Config {
 
 4. Avoid I/O, including both filesystem, network, and system calls.
 
-### 使用 init 函数的成功案例
+### 使用 init 函数的经典案例
 
-todo Go sql
-[design-patterns-in-gos-databasesql-package](https://eli.thegreenplace.net/2019/design-patterns-in-gos-databasesql-package/)
+虽然`init`函数最好别用，但是并非不可用。下面就让我们从`database/sql`标准库欣赏`init`函数的妙用。
 
+使用`sql databases`的通用步骤
+```go
+// Step 1: import the main SQL package
+import "database/sql"
+
+// Step 2: import a driver package to use a specific SQL database
+import _ "github.com/mattn/go-sqlite3"
+
+// 或者像我们项目中的mysql
+// _ "github.com/go-sql-driver/mysql"
+
+// Step 3: open a database using a registered driver name
+func main() {
+  // ...
+  db, err := sql.Open("sqlite3", "database.db")
+  // ...
+}
+```
+
+下面细究一下上述的三个步骤。
+
+* 第一步
+```go
+// database/sql/sql.go
+var (
+	driversMu sync.RWMutex
+	drivers   = make(map[string]driver.Driver) 
+)
+```
+导入`database/sql`，便会初始化`drivers`。
+
+正如文档所说：`The sql package must be used in conjunction with a database driver.`
+
+我们需要将具体的`sql driver`注册到`drivers map`上。
+
+为此`database/sql`包提供了注册方法。
+```go
+// database/sql/sql.go
+
+// Register makes a database driver available by the provided name.
+// If Register is called twice with the same name or if driver is nil,
+// it panics.
+func Register(name string, driver driver.Driver) {
+	driversMu.Lock()
+	defer driversMu.Unlock()
+	if driver == nil {
+		panic("sql: Register driver is nil")
+	}
+	if _, dup := drivers[name]; dup {
+		panic("sql: Register called twice for driver " + name)
+	}
+	drivers[name] = driver
+}
+```
+
+* 第二步
+
+`import _ "github.com/go-sql-driver/mysql"`不会产生任何影响，**除了运行`mysql`包中的`init`**。
+
+根据上面所述，猜的没错的话，`mysql`的`init`应该是将`mysql`的`driver`注册到`database/sql`包中的`drivers map`上。
+
+```go
+// github.com/go-sql-driver/mysql/driver.go
+
+func init() {
+	sql.Register("mysql", &MySQLDriver{})
+}
+```
+
+* 第三步
+
+既然`mysql driver`已经注册上了，那么就开始使用吧~
+
+```go
+// database/sql/sql.go 
+
+func Open(driverName, dataSourceName string) (*DB, error) {
+	driversMu.RLock()
+	driveri, ok := drivers[driverName]
+	driversMu.RUnlock()
+	if !ok {
+		return nil, fmt.Errorf("sql: unknown driver %q (forgotten import?)", driverName)
+	}
+
+
+	return ...
+}
+```
+
+
+如果你对这个话题有更深的兴趣，推荐查看参考中的`<design-patterns-in-gos-databasesql-package>`文章。
 
 ## 🚩defer 函数：合理使用
 ### defer 的定义
