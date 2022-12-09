@@ -851,6 +851,13 @@ func main() {
 }
 ```
 
+* 为什么`Go`不支持函数重载
+
+我们直接引用`Go FAQ`吧
+
+> Experience with other languages told us that having a variety of methods with the same name but different signature was occasionally useful but that it could be confusing and fragile in practice.
+> Regarding operator overloading, it seems more a convenience than an absolute requirement. Again, things are simpler without it.
+
 ### 功能选项模式
 如何构建一个合理的构建函数？
 
