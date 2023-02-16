@@ -13,6 +13,7 @@
   - [🈲2、goroutine 对迭代变量的引用（闭包）](#🈲2、goroutine对迭代变量的引用（闭包）)
   - [🈲3、不要在循环中使用 defer](#🈲3、不要在循环中使用-defer)
   - [🚩4、range 后接的表达式只会被求值一次](#🚩4、range后接的表达式只会被求值一次)
+  - [🚩5、如何很好的遍历元素量巨多的 slice/array？](#🚩5、如何很好的遍历元素量巨多的-slicearray？)
 - [select](#select)
   - [🈲1、不要假定和依赖 select 的执行顺序](#🈲1、不要假定和依赖-select的执行顺序)
 - [其他](#其他)
@@ -146,6 +147,42 @@ for i:=0;i<len(s); i++ {
 ```
 
 > the len(s) expression is evaluated during each iteration.
+
+### 🚩5、如何很好的遍历元素量巨多的 slice/array？
+
+存在两种方式：
+1、for range 会将后面的表达式的值复制一份
+
+2、for i:=0 ... 通过下标遍历
+
+回答：采用第二种通过下标的方式进行访问。为何？主要第一种方式代价大、还可能存在坑。
+
+下面就来聊聊这个坑。
+
+**for range 的时候，会 copy 一份 range 后的 expression。**
+
+```go
+func main() {
+    var a = [5]int{1, 2, 3, 4, 5}
+    var r [5]int
+
+    fmt.Println("original a =", a) // [1 2 3 4 5]
+
+    for i, v := range a {
+        if i == 0 {
+            a[1] = 12
+            a[2] = 13
+        }
+        r[i] = v
+    }
+
+    fmt.Println("after for range loop, r =", r) // [1 2 3 4 5]
+    fmt.Println("after for range loop, a =", a) // [1 12 13 4 5]
+}
+```
+> The reason is that participating in the for range loop is a copy of the range expression. That is, in the above example, it is the copy of a that is actually participating in the loop, not the real a.
+
+千万注意哈。
 
 ## select 
 ### 🈲1、不要假定和依赖 select 的执行顺序
