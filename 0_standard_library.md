@@ -76,6 +76,70 @@ defer ticker.Stop()
 
 ## json
 
+### 🚩Go 中数据类型与 JSON 转换之间的映射关系
+
+| Go Type                                           | JSON Type                                               |
+|---------------------------------------------------|---------------------------------------------------------|
+| bool                                              | JSON boolean                                            |
+| string                                            | JSON string                                             |
+| int*, uint*, float*, rune                         | JSON number                                             |
+| arrary, slice                                     | JSON array                                              |
+| struct, map                                       | JSON object                                             |
+| nil pointers, interface values, slices, maps, etc | JSON null                                               |
+| chan, func, complex                               | Not Supported                                           |
+| time.Time                                         | RFC3339-format JSON string, '2020-11-08T06:27:59+01:00' |
+| []byte                                            | Base64-encoded JSON string                              |
+
+todo 补充代码示例
+* time.Time
+* map
+
+map entries being sorted alphabetically 按照字母顺序排序
+
+* struct
+隐藏struct中的字段有两种方式：
+
+1、主动式：`json:"-"`
+2、被动式： `json:"id,omitempty"`
+
+## handler中decode json的选择
+* json.Decoder
+
+一行代码解决
+```go
+err := json.NewDecoder(r.Body).Decode(&input)
+```
+
+* json.Unmarshal
+
+更加复杂一些
+
+```go
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	// Use the json.Unmarshal() function to decode the JSON in the []byte slice to the // input struct. Again, notice that we are using a *pointer* to the input
+	// struct as the decode destination.
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+```
+
+二者之benchmark比较
+```shell
+$ go test -run=^$ -bench=. -benchmem -count=3 -benchtime=5s
+goos: linux
+goarch: amd64 BenchmarkUnmarshal-8 BenchmarkUnmarshal-8 BenchmarkUnmarshal-8 BenchmarkDecoder-8 BenchmarkDecoder-8 BenchmarkDecoder-8 1000000
+9543 ns/op 10469 ns/op 10531 ns/op
+8644 ns/op 8529 ns/op 7573 ns/op
+2992 B/op 2992 B/op 2992 B/op 1664 B/op 1664 B/op 1664 B/op
+20 allocs/op 20 allocs/op 20 allocs/op 21 allocs/op 21 allocs/op 21 allocs/op
+```
+
 ### 🌵marshal 一个 map 的顺序
 虽然`map`本身是没有顺序可言的，但是`json.Marshal map`，会按照`map`的key作为排序规则
 ```go
@@ -134,5 +198,6 @@ io.Copy(ioutil.Discard, resp.Body) // if you don't use http body
 ## 参考
 * `白明《Go语言精进之路》(📚)`
 * `[100 go mistakes](📚)`
+* `[Let's Go Further](📚)`
 * [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
 * [Effective Go](https://go.dev/doc/effective_go)
